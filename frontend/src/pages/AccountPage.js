@@ -18,10 +18,10 @@ const AccountPage = () => {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="pb-20"
+      className="pb-24"
     >
       {/* Header */}
-      <div className="flex items-center justify-center px-4 py-4 bg-[#F8FAFC] sticky top-0 z-40">
+      <div className="flex items-center justify-center px-4 py-5 bg-[#F8FAFC] sticky top-0 z-40">
         <h1 className="text-2xl font-bold text-[#1E293B] font-heading tracking-tight">
           حسابي
         </h1>

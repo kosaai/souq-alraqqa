@@ -7,6 +7,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AddListingPage from '@/pages/AddListingPage';
 import FavoritesPage from '@/pages/FavoritesPage';
+import NotificationsPage from '@/pages/NotificationsPage';
 import AccountPage from '@/pages/AccountPage';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/add-listing" element={<AddListingPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/account" element={<AccountPage />} />
         </Route>
       </Routes>

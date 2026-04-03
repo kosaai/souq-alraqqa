@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -9,29 +8,33 @@ const BottomNav = () => {
   const navItems = [
     { id: 'home', label: 'الرئيسية', icon: 'fa-house', path: '/' },
     { id: 'favorites', label: 'المفضلة', icon: 'fa-heart', path: '/favorites' },
-    { id: 'add', label: '', icon: '', path: '/add-listing' }, // FAB placeholder
+    { id: 'add', label: 'إضافة إعلان', icon: 'fa-plus', path: '/add-listing', isSpecial: true },
+    { id: 'notifications', label: 'الإشعارات', icon: 'fa-bell', path: '/notifications' },
     { id: 'account', label: 'الحساب', icon: 'fa-user', path: '/account' },
   ];
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="fixed bottom-0 w-full max-w-md bg-white h-16 rounded-t-3xl flex justify-around items-center px-6 z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+    <div className="fixed bottom-0 w-full max-w-md bg-white h-20 rounded-t-3xl flex justify-around items-center px-2 z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
       {navItems.map((item) => {
-        if (item.id === 'add') {
+        const active = isActive(item.path);
+        
+        if (item.isSpecial) {
           return (
-            <motion.button
+            <button
               key={item.id}
-              data-testid="add-listing-fab"
+              data-testid={`nav-${item.id}`}
               onClick={() => navigate(item.path)}
-              className="absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white flex items-center justify-center text-2xl shadow-[0_8px_20px_rgba(79,70,229,0.3)] cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex flex-col items-center gap-1.5 min-w-[70px] cursor-pointer transition-all"
             >
-              <i className="fas fa-plus"></i>
-            </motion.button>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white flex items-center justify-center shadow-lg">
+                <i className={`fas ${item.icon} text-lg`}></i>
+              </div>
+              <span className="text-[10px] font-bold text-[#4F46E5]">
+                {item.label}
+              </span>
+            </button>
           );
         }
 
@@ -40,18 +43,18 @@ const BottomNav = () => {
             key={item.id}
             data-testid={`nav-${item.id}`}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-1 min-w-[60px] cursor-pointer"
+            className="flex flex-col items-center gap-1.5 min-w-[60px] cursor-pointer transition-all"
           >
             <i
-              className={`fas ${item.icon} text-lg transition-colors ${
-                isActive(item.path)
+              className={`fas ${item.icon} text-xl transition-colors ${
+                active
                   ? 'bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent'
                   : 'text-slate-400'
               }`}
             ></i>
             <span
-              className={`text-xs font-bold transition-colors ${
-                isActive(item.path)
+              className={`text-[10px] font-bold transition-colors ${
+                active
                   ? 'bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent'
                   : 'text-slate-400'
               }`}
