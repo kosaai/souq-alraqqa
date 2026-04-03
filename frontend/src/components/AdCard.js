@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { formatPrice, formatTimeAgo, getUserById } from '../utils/helpers';
+import { mockUsers } from '../data/mockData';
 
 const AdCard = ({ ad }) => {
   const navigate = useNavigate();
@@ -15,10 +17,7 @@ const AdCard = ({ ad }) => {
     navigate(`/ad/${ad.id}`);
   };
 
-  // Format price with commas
-  const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
+  const seller = getUserById(ad.userId, mockUsers);
 
   return (
     <motion.div
@@ -49,18 +48,43 @@ const AdCard = ({ ad }) => {
         </motion.button>
       </div>
       <div className="p-4">
+        {/* Seller Info */}
+        {seller && (
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src={seller.avatar}
+              alt={seller.name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            <span className="text-xs font-bold text-slate-600">{seller.name}</span>
+          </div>
+        )}
+        
         <h3 className="text-base font-bold text-[#1E293B] line-clamp-2 leading-relaxed mb-2">
           {ad.title}
         </h3>
         <p className="text-lg font-extrabold bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
-          {formatPrice(ad.price)} ر.س
+          {formatPrice(ad.price)} ل.س
         </p>
         <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
           <i className="fas fa-location-dot"></i>
           <span>{ad.location}</span>
         </div>
+        
+        {/* Meta Info */}
+        <div className="flex items-center gap-3 mt-3 text-xs text-slate-500">
+          <div className="flex items-center gap-1">
+            <i className="fas fa-eye"></i>
+            <span>{ad.viewCount}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <i className="fas fa-clock"></i>
+            <span>{formatTimeAgo(ad.publishedAt)}</span>
+          </div>
+        </div>
+        
         {ad.status && (
-          <div className="mt-2">
+          <div className="mt-3">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
               ad.status === 'جديد' ? 'bg-green-50 text-green-600' :
               ad.status === 'مستعمل' ? 'bg-orange-50 text-orange-600' :

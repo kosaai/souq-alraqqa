@@ -9,6 +9,7 @@ import AddListingPage from '@/pages/AddListingPage';
 import FavoritesPage from '@/pages/FavoritesPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import AccountPage from '@/pages/AccountPage';
+import ProfilePage from '@/pages/ProfilePage';
 import AdDetailsPage from '@/pages/AdDetailsPage';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/add-listing" element={<AddListingPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

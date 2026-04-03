@@ -6,7 +6,7 @@ const AccountPage = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: 'fa-user', label: 'الملف الشخصي', action: () => {} },
+    { icon: 'fa-user', label: 'الملف الشخصي', action: () => navigate('/profile') },
     { icon: 'fa-rectangle-list', label: 'إعلاناتي', action: () => {} },
     { icon: 'fa-gear', label: 'الإعدادات', action: () => {} },
     { icon: 'fa-circle-question', label: 'المساعدة والدعم', action: () => {} },

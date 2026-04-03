@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import AdCard from '../components/AdCard';
-import { mockAds } from '../data/mockData';
+import { mockAds, mockUsers } from '../data/mockData';
+import { formatPrice, formatTimeAgo, getUserById } from '../utils/helpers';
 
 const AdDetailsPage = () => {
   const { id } = useParams();
@@ -20,10 +21,7 @@ const AdDetailsPage = () => {
     );
   }
 
-  // Format price with commas
-  const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
+  const seller = getUserById(ad.userId, mockUsers);
 
   const similarAds = mockAds
     .filter((a) => a.category === ad.category && a.id !== ad.id)
@@ -166,13 +164,22 @@ const AdDetailsPage = () => {
         <div className="bg-white rounded-2xl p-5 shadow-sm mb-6">
           <h3 className="text-lg font-bold text-[#1E293B] mb-4">معلومات البائع</h3>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white">
-              <i className="fas fa-user"></i>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-[#1E293B]">مستخدم تجريبي</p>
-              <p className="text-xs text-slate-500">عضو منذ 2023</p>
-            </div>
+            {seller && (
+              <>
+                <img
+                  src={seller.avatar}
+                  alt={seller.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-bold text-[#1E293B]">{seller.name}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <i className="fas fa-star text-yellow-400 text-xs"></i>
+                    <span className="text-xs text-slate-500">{seller.rating}</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <div className="flex gap-3">
             <a
