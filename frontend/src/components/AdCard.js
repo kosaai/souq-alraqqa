@@ -15,6 +15,11 @@ const AdCard = ({ ad }) => {
     navigate(`/ad/${ad.id}`);
   };
 
+  // Format price with commas
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
   return (
     <motion.div
       data-testid={`ad-card-${ad.id}`}
@@ -48,12 +53,23 @@ const AdCard = ({ ad }) => {
           {ad.title}
         </h3>
         <p className="text-lg font-extrabold bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
-          {ad.price} ر.س
+          {formatPrice(ad.price)} ر.س
         </p>
         <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
           <i className="fas fa-location-dot"></i>
           <span>{ad.location}</span>
         </div>
+        {ad.status && (
+          <div className="mt-2">
+            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+              ad.status === 'جديد' ? 'bg-green-50 text-green-600' :
+              ad.status === 'مستعمل' ? 'bg-orange-50 text-orange-600' :
+              'bg-blue-50 text-blue-600'
+            }`}>
+              {ad.status}
+            </span>
+          </div>
+        )}
       </div>
     </motion.div>
   );

@@ -20,6 +20,11 @@ const AdDetailsPage = () => {
     );
   }
 
+  // Format price with commas
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
   const similarAds = mockAds
     .filter((a) => a.category === ad.category && a.id !== ad.id)
     .slice(0, 3);
@@ -101,11 +106,36 @@ const AdDetailsPage = () => {
 
       {/* Content */}
       <div className="px-4 pt-6">
-        {/* Category Badge */}
-        <div className="mb-3">
+        {/* Category Badge & Status */}
+        <div className="flex items-center gap-2 mb-3">
           <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 text-[#4F46E5] text-xs font-bold">
             {ad.category}
           </span>
+          {ad.status && (
+            <span className={`inline-block px-4 py-1.5 rounded-full text-xs font-bold ${
+              ad.status === 'جديد' ? 'bg-green-50 text-green-600' :
+              ad.status === 'مستعمل' ? 'bg-orange-50 text-orange-600' :
+              'bg-blue-50 text-blue-600'
+            }`}>
+              {ad.status}
+            </span>
+          )}
+        </div>
+
+        {/* Rating & Views */}
+        <div className="flex items-center gap-4 mb-3">
+          {ad.rating && (
+            <div className="flex items-center gap-1">
+              <i className="fas fa-star text-yellow-400"></i>
+              <span className="text-sm font-bold text-[#1E293B]">{ad.rating}</span>
+            </div>
+          )}
+          {ad.viewCount && (
+            <div className="flex items-center gap-1">
+              <i className="fas fa-eye text-slate-400"></i>
+              <span className="text-sm text-slate-500">{ad.viewCount} مشاهدة</span>
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -115,7 +145,7 @@ const AdDetailsPage = () => {
 
         {/* Price */}
         <p className="text-3xl font-extrabold bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent mb-4">
-          {ad.price} ر.س
+          {formatPrice(ad.price)} ر.س
         </p>
 
         {/* Location */}
@@ -144,13 +174,26 @@ const AdDetailsPage = () => {
               <p className="text-xs text-slate-500">عضو منذ 2023</p>
             </div>
           </div>
-          <button
-            className="w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            data-testid="contact-seller-btn"
-          >
-            <i className="fas fa-phone"></i>
-            <span>اتصل بالبائع</span>
-          </button>
+          <div className="flex gap-3">
+            <a
+              href={`tel:${ad.phone}`}
+              className="flex-1 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              data-testid="call-seller-btn"
+            >
+              <i className="fas fa-phone"></i>
+              <span>اتصل</span>
+            </a>
+            <a
+              href={`https://wa.me/${ad.phone.replace(/[^0-9]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 rounded-xl bg-green-500 text-white font-bold py-3 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              data-testid="whatsapp-btn"
+            >
+              <i className="fab fa-whatsapp text-xl"></i>
+              <span>واتساب</span>
+            </a>
+          </div>
         </div>
 
         {/* Similar Ads */}

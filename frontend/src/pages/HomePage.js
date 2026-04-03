@@ -42,7 +42,7 @@ const HomePage = () => {
       {/* Header */}
       <div className="flex justify-center items-center px-4 py-5 bg-[#F8FAFC] sticky top-0 z-40">
         <h1 className="text-2xl font-bold font-heading tracking-tight text-[#1E293B]">
-          السوق الإلكتروني
+          سوق الرقة
         </h1>
       </div>
 
