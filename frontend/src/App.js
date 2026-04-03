@@ -9,6 +9,7 @@ import AddListingPage from '@/pages/AddListingPage';
 import FavoritesPage from '@/pages/FavoritesPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import AccountPage from '@/pages/AccountPage';
+import AdDetailsPage from '@/pages/AdDetailsPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         {/* Main App Routes (with bottom nav) */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/ad/:id" element={<AdDetailsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/add-listing" element={<AddListingPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />

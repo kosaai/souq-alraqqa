@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const AdCard = ({ ad }) => {
+  const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(ad.isFavorite);
 
   const toggleFavorite = (e) => {
@@ -9,9 +11,14 @@ const AdCard = ({ ad }) => {
     setIsFavorite(!isFavorite);
   };
 
+  const handleCardClick = () => {
+    navigate(`/ad/${ad.id}`);
+  };
+
   return (
     <motion.div
       data-testid={`ad-card-${ad.id}`}
+      onClick={handleCardClick}
       className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col relative cursor-pointer"
       whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
       whileTap={{ scale: 0.98 }}
