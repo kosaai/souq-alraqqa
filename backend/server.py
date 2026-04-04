@@ -14,10 +14,7 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+from db import db, client
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -93,13 +90,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi import Request
 
-# ربط static
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# ربط static (المجلد الصحيح)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
-# ربط templates
-templates = Jinja2Templates(directory="templates")
+# ربط templates (المجلد الصحيح)
+templates = Jinja2Templates(directory="backend/templates")
 
-# صفحة رئيسية
+# الصفحة الرئيسية
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})		
+    return templates.TemplateResponse("index.html", {"request": request})
