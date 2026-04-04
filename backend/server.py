@@ -88,18 +88,4 @@ logger = logging.getLogger(__name__)
 async def shutdown_db_client():
     client.close()
 		
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from fastapi import Request
-
-# ربط static (المجلد الصحيح)
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
-
-# ربط templates (المجلد الصحيح)
-templates = Jinja2Templates(directory="backend/templates")
-
-# الصفحة الرئيسية
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+		
