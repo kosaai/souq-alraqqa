@@ -110,9 +110,10 @@ async def shutdown_db_client():
 
 # ================= STATIC + TEMPLATES =================
 
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+# 🔥 التصحيح هنا
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates(directory="backend/templates")
+templates = Jinja2Templates(directory="templates")
 
 
 # ================= FRONTEND =================
