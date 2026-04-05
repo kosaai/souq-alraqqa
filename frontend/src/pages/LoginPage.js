@@ -4,15 +4,47 @@ import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock login - just navigate to home
-    navigate('/');
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('https://souq-alraqqa.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || 'فشل تسجيل الدخول');
+      }
+
+      // ✅ حفظ التوكن
+      localStorage.setItem('token', data.access_token);
+
+      // ✅ الانتقال للصفحة الرئيسية
+      navigate('/');
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -27,74 +59,66 @@ const LoginPage = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center">
             <i className="fas fa-user text-white text-2xl"></i>
           </div>
-          <h2 className="text-2xl font-bold text-[#1E293B] font-heading tracking-tight">
+          <h2 className="text-2xl font-bold text-[#1E293B]">
             تسجيل الدخول
           </h2>
-          <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+          <p className="text-sm text-slate-500 mt-2">
             مرحباً بعودتك! سجل دخولك للمتابعة
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-bold text-[#1E293B] mb-2">
-              <i className="fas fa-envelope ms-1"></i>
+            <label className="block text-sm font-bold mb-2">
               البريد الإلكتروني
             </label>
             <input
               type="email"
-              data-testid="login-email-input"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-all"
+              className="w-full bg-slate-50 rounded-xl px-4 py-3 border"
               placeholder="ادخل بريدك الإلكتروني"
               required
             />
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-bold text-[#1E293B] mb-2">
-              <i className="fas fa-lock ms-1"></i>
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2">
               كلمة المرور
             </label>
             <input
               type="password"
-              data-testid="login-password-input"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-all"
+              className="w-full bg-slate-50 rounded-xl px-4 py-3 border"
               placeholder="ادخل كلمة المرور"
               required
             />
           </div>
 
+          {/* ❌ رسالة خطأ */}
+          {error && (
+            <div className="mb-3 text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            data-testid="login-submit-btn"
-            className="w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3 shadow-md hover:shadow-lg transition-all"
+            disabled={loading}
+            className="w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3"
           >
-            تسجيل الدخول
+            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
 
         <div className="mt-6 text-center space-y-3">
           <button
-            onClick={() => navigate('/forgot-password')}
-            className="text-sm text-[#4F46E5] font-bold hover:underline"
-            data-testid="forgot-password-link"
+            onClick={() => navigate('/register')}
+            className="text-[#4F46E5] font-bold"
           >
-            نسيت كلمة المرور؟
+            إنشاء حساب جديد
           </button>
-          <div className="text-sm text-slate-500">
-            ليس لديك حساب؟{' '}
-            <button
-              onClick={() => navigate('/register')}
-              className="text-[#4F46E5] font-bold hover:underline"
-              data-testid="register-link"
-            >
-              إنشاء حساب جديد
-            </button>
-          </div>
         </div>
       </div>
     </motion.div>
