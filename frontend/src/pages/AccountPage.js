@@ -7,6 +7,40 @@ const AccountPage = () => {
 
   const [user, setUser] = useState(null);
 
+  // ✅ NEW: حالة الصورة
+  const [newImage, setNewImage] = useState(null);
+
+  // ✅ جلب التوكن مرة وحدة
+  const token = localStorage.getItem('token');
+
+  // ✅ NEW: دالة رفع الصورة
+  const handleImageUpload = async () => {
+    if (!newImage) return;
+
+    const formData = new FormData();
+    formData.append('file', newImage);
+
+    try {
+      const res = await fetch('https://souq-alraqqa.onrender.com/api/user/upload-image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      // تحديث المستخدم مباشرة
+      setUser({ ...user, image: data.image_url });
+
+      alert("تم تحديث الصورة ✅");
+    } catch (err) {
+      console.error(err);
+      alert("خطأ في رفع الصورة ❌");
+    }
+  };
+
   // ✅ حماية الصفحة + جلب البيانات
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -64,8 +98,14 @@ const AccountPage = () => {
       <div className="px-4 pt-6">
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-2xl">
-              <i className="fas fa-user"></i>
+
+            {/* ✅ صورة المستخدم (معدلة) */}
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center">
+              {user?.image ? (
+                <img src={user.image} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <i className="fas fa-user text-white text-2xl"></i>
+              )}
             </div>
 
             <div>
@@ -78,6 +118,24 @@ const AccountPage = () => {
             </div>
 
           </div>
+
+          {/* ✅ NEW: رفع صورة */}
+          <div className="mt-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNewImage(e.target.files[0])}
+              className="mb-2"
+            />
+
+            <button
+              onClick={handleImageUpload}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              رفع الصورة
+            </button>
+          </div>
+
         </div>
 
         {/* Menu */}
