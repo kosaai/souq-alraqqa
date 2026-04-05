@@ -1502,5 +1502,20 @@
 <script src="/static/dist/js/demo.js"></script>
 <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
 <script src="/static/dist/js/pages/dashboard.js"></script>
+<script>
+fetch("https://souq-alraqqa.onrender.com/api/dashboard")
+  .then(res => res.json())
+  .then(data => {
+    const cards = document.querySelectorAll(".small-box h3");
+
+    if (cards.length >= 4) {
+      cards[0].innerText = data.ads;
+      cards[1].innerText = data.bounce + "%";
+      cards[2].innerText = data.users;
+      cards[3].innerText = data.visitors;
+    }
+  })
+  .catch(err => console.error("Dashboard error:", err));
+</script>
 </body>
 </html>
