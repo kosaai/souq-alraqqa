@@ -1509,10 +1509,10 @@ fetch("https://souq-alraqqa.onrender.com/api/dashboard")
     const cards = document.querySelectorAll(".small-box h3");
 
     if (cards.length >= 4) {
-      cards[0].innerText = data.ads;
-      cards[1].innerText = data.bounce + "%";
-      cards[2].innerText = data.users;
-      cards[3].innerText = data.visitors;
+      cards[0].innerText = data.ads || 0;
+      cards[1].innerText = (data.bounce || 0) + "%";
+      cards[2].innerText = data.users || 0;
+      cards[3].innerText = data.visitors || 0;
     }
   })
   .catch(err => console.error("Dashboard error:", err));
