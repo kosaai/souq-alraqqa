@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Request, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, Request, HTTPException, Depends, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 
 import bcrypt
 import jwt
+import shutil
 
 
 # ================= ENV =================
@@ -131,6 +132,30 @@ async def login(user: UserLogin):
     token = create_token(db_user["id"])
 
     return {"access_token": token}
+
+
+# ================= NEW: IMAGE UPLOAD =================
+
+UPLOAD_DIR = "static/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@api_router.post("/user/upload-image")
+async def upload_image(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
+
+    filename = f"{user_id}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    image_url = f"/static/uploads/{filename}"
+
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"image": image_url}}
+    )
+
+    return {"image_url": image_url}
 
 
 # مثال API محمي
