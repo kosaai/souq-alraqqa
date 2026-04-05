@@ -135,8 +135,11 @@ async def login(user: UserLogin):
 # 🔥 Dashboard API
 @api_router.get("/dashboard")
 async def dashboard():
-    users_count = await db.users.count_documents({})
-    
+    try:
+        users_count = await db.users.count_documents({})
+    except:
+        users_count = 0
+
     return {
         "users": users_count,
         "ads": 0,
