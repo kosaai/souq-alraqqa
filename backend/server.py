@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -12,24 +13,28 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+import bcrypt
+import jwt
 
 
-# تحميل env
+# ================= ENV =================
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+SECRET_KEY = os.environ.get("SECRET_KEY", "SUPER_SECRET_KEY")
+ALGORITHM = "HS256"
 
-# MongoDB
+
+# ================= MongoDB =================
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 
-# إنشاء التطبيق
+# ================= APP =================
 app = FastAPI()
-
-# router
 api_router = APIRouter(prefix="/api")
 
 
@@ -47,7 +52,94 @@ class StatusCheckCreate(BaseModel):
     client_name: str
 
 
-# ================= API =================
+# ================= AUTH MODELS =================
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+# ================= AUTH FUNCTIONS =================
+
+def hash_password(password: str):
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(password: str, hashed: str):
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+
+def create_token(user_id: str):
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.utcnow() + timedelta(days=7)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+security = HTTPBearer()
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload["user_id"]
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ================= AUTH ROUTES =================
+
+@api_router.post("/auth/register")
+async def register(user: UserRegister):
+    existing = await db.users.find_one({"email": user.email})
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    hashed_password = hash_password(user.password)
+
+    new_user = {
+        "id": str(uuid.uuid4()),
+        "email": user.email,
+        "password": hashed_password
+    }
+
+    await db.users.insert_one(new_user)
+
+    token = create_token(new_user["id"])
+
+    return {"access_token": token}
+
+
+@api_router.post("/auth/login")
+async def login(user: UserLogin):
+    db_user = await db.users.find_one({"email": user.email})
+
+    if not db_user:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    if not verify_password(user.password, db_user["password"]):
+        raise HTTPException(status_code=400, detail="Wrong password")
+
+    token = create_token(db_user["id"])
+
+    return {"access_token": token}
+
+
+# مثال API محمي
+@api_router.get("/protected")
+async def protected(user_id: str = Depends(get_current_user)):
+    return {"message": f"Hello user {user_id}"}
+
+
+# ================= BASIC API =================
 
 @api_router.get("/")
 async def root():
@@ -77,7 +169,8 @@ async def get_status_checks():
     return status_checks
 
 
-# ربط API
+# ================= ROUTER =================
+
 app.include_router(api_router)
 
 
@@ -108,9 +201,8 @@ async def shutdown_db_client():
     client.close()
 
 
-# ================= STATIC + TEMPLATES =================
+# ================= STATIC =================
 
-# 🔥 التصحيح هنا
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
