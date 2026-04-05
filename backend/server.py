@@ -132,7 +132,17 @@ async def login(user: UserLogin):
     token = create_token(db_user["id"])
 
     return {"access_token": token}
-
+# 🔥 Dashboard API
+@api_router.get("/dashboard")
+async def dashboard():
+    users_count = await db.users.count_documents({})
+    
+    return {
+        "users": users_count,
+        "ads": 0,
+        "visitors": 0,
+        "bounce": 0
+    }
 
 # ================= NEW: IMAGE UPLOAD =================
 
