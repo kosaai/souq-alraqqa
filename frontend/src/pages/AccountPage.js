@@ -34,10 +34,10 @@ const AccountPage = () => {
       // تحديث المستخدم مباشرة
       setUser({ ...user, image: data.image_url });
 
-      alert("تم تحديث الصورة ✅");
+      alert('تم تحديث الصورة');
     } catch (err) {
       console.error(err);
-      alert("خطأ في رفع الصورة ❌");
+      alert('خطأ في رفع الصورة');
     }
   };
 
@@ -72,12 +72,17 @@ const AccountPage = () => {
     navigate('/login');
   };
 
+  const stats = [
+    { key: 'total_ads', label: 'إجمالي الإعلانات', value: user?.total_ads ?? 0, icon: 'fa-rectangle-list' },
+    { key: 'total_views', label: 'إجمالي المشاهدات', value: user?.total_views ?? 0, icon: 'fa-eye' },
+    { key: 'favorites_count', label: 'المفضلة', value: user?.favorites_count ?? 0, icon: 'fa-heart' },
+  ];
+
   const menuItems = [
-    { icon: 'fa-user', label: 'الملف الشخصي', action: () => navigate('/profile') },
     { icon: 'fa-rectangle-list', label: 'إعلاناتي', action: () => {} },
+    { icon: 'fa-heart', label: 'المفضلة', action: () => navigate('/favorites') },
     { icon: 'fa-gear', label: 'الإعدادات', action: () => {} },
-    { icon: 'fa-circle-question', label: 'المساعدة والدعم', action: () => {} },
-    { icon: 'fa-right-from-bracket', label: 'تسجيل الخروج', action: handleLogout },
+    { icon: 'fa-right-from-bracket', label: 'تسجيل الخروج', action: handleLogout, isLogout: true },
   ];
 
   return (
@@ -87,20 +92,11 @@ const AccountPage = () => {
       transition={{ duration: 0.3 }}
       className="pb-24"
     >
-      {/* Header */}
-      <div className="flex items-center justify-center px-4 py-5 bg-[#F8FAFC] sticky top-0 z-40">
-        <h1 className="text-2xl font-bold text-[#1E293B]">
-          حسابي
-        </h1>
-      </div>
-
-      {/* Profile */}
-      <div className="px-4 pt-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+      <div className="px-4 pt-6 space-y-6">
+        {/* Profile Header */}
+        <div className="rounded-3xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-5 shadow-sm">
           <div className="flex items-center gap-4">
-
-            {/* ✅ صورة المستخدم (معدلة) */}
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center">
               {user?.image ? (
                 <img src={user.image} alt="profile" className="w-full h-full object-cover" />
               ) : (
@@ -108,49 +104,74 @@ const AccountPage = () => {
               )}
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold text-[#1E293B]">
-                {user ? user.full_name : '...'}
-              </h2>
-              <p className="text-sm text-slate-500">
-                {user ? user.email : '...'}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-white truncate">
+                {user?.full_name || '...'}
+              </h1>
+              <p className="text-sm text-white/90 truncate">
+                {user?.email || '...'}
               </p>
             </div>
 
+            <button
+              onClick={() => navigate('/profile')}
+              className="shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
+            >
+              تعديل الملف
+            </button>
           </div>
 
-          {/* ✅ NEW: رفع صورة */}
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-2">
             <input
               type="file"
               accept="image/*"
               onChange={(e) => setNewImage(e.target.files[0])}
-              className="mb-2"
+              className="flex-1 text-xs text-white file:ml-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[#4F46E5]"
             />
-
             <button
               onClick={handleImageUpload}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
+              className="px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
               رفع الصورة
             </button>
           </div>
-
         </div>
 
-        {/* Menu */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          {menuItems.map((item, index) => (
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          {stats.map((stat) => (
+            <div key={stat.key} className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center mb-2">
+                <i className={`fas ${stat.icon} text-[#4F46E5] text-sm`}></i>
+              </div>
+              <p className="text-lg font-extrabold text-[#1E293B]">{stat.value}</p>
+              <p className="text-[11px] text-slate-500 leading-4">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Grid Menu */}
+        <div className="grid grid-cols-2 gap-3 pb-2">
+          {menuItems.map((item) => (
             <button
-              key={index}
+              key={item.label}
               onClick={item.action}
-              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-slate-50 border-b last:border-0"
+              className={`rounded-2xl p-4 shadow-sm border transition-all active:scale-[0.98] ${
+                item.isLogout
+                  ? 'bg-red-50 border-red-100 hover:bg-red-100'
+                  : 'bg-white border-slate-100 hover:bg-slate-50'
+              }`}
             >
-              <i className={`fas ${item.icon} text-[#4F46E5]`}></i>
-              <span className="flex-1 text-right font-bold">
-                {item.label}
-              </span>
-              <i className="fas fa-chevron-left text-slate-400 text-xs"></i>
+              <div className="flex flex-col items-center justify-center gap-2">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  item.isLogout ? 'bg-red-100' : 'bg-indigo-50'
+                }`}>
+                  <i className={`fas ${item.icon} text-base ${item.isLogout ? 'text-red-500' : 'text-[#4F46E5]'}`}></i>
+                </div>
+                <span className={`text-sm font-bold ${item.isLogout ? 'text-red-600' : 'text-[#1E293B]'}`}>
+                  {item.label}
+                </span>
+              </div>
             </button>
           ))}
         </div>
