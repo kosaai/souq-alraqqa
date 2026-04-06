@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import List
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -56,8 +56,17 @@ class StatusCheckCreate(BaseModel):
 # ================= AUTH MODELS =================
 
 class UserRegister(BaseModel):
+    full_name: str
     email: str
+    phone: str
     password: str
+    confirm_password: str
+
+    @model_validator(mode="after")
+    def validate_passwords_match(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Password and confirm password do not match")
+        return self
 
 
 class UserLogin(BaseModel):
@@ -108,7 +117,9 @@ async def register(user: UserRegister):
 
     new_user = {
         "id": str(uuid.uuid4()),
+        "full_name": user.full_name,
         "email": user.email,
+        "phone": user.phone,
         "password": hashed_password
     }
 

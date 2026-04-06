@@ -37,10 +37,11 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
-        name: formData.fullName,
         full_name: formData.fullName,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password,
+        confirm_password: formData.confirmPassword,
       }, {
         headers: {
           'Content-Type': 'application/json',
