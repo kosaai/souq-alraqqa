@@ -62,10 +62,13 @@ const RegisterPage = () => {
 
     } catch (err) {
       console.error(err);
-      const message =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        'فشل إنشاء الحساب';
+      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
+      const errorMap = {
+        'Email already exists': 'البريد الإلكتروني مستخدم بالفعل',
+        'Password and confirm password do not match': 'كلمة المرور غير متطابقة',
+        'Database error': 'حدث خطأ في قاعدة البيانات',
+      };
+      const message = errorMap[rawMessage] || rawMessage || 'فشل إنشاء الحساب';
       setErrorMsg(message);
     }
 

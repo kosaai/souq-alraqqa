@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ const AccountPage = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
+  const fileInputRef = useRef(null);
 
   // ✅ NEW: حالة الصورة
   const [newImage, setNewImage] = useState(null);
@@ -14,11 +15,11 @@ const AccountPage = () => {
   const token = localStorage.getItem('token');
 
   // ✅ NEW: دالة رفع الصورة
-  const handleImageUpload = async () => {
-    if (!newImage) return;
+  const handleImageUpload = async (selectedImage = newImage) => {
+    if (!selectedImage) return;
 
     const formData = new FormData();
-    formData.append('file', newImage);
+    formData.append('file', selectedImage);
 
     try {
       const res = await fetch('https://souq-alraqqa.onrender.com/api/user/upload-image', {
@@ -39,6 +40,17 @@ const AccountPage = () => {
       console.error(err);
       alert('خطأ في رفع الصورة');
     }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewImage(file);
+    await handleImageUpload(file);
   };
 
   // ✅ حماية الصفحة + جلب البيانات
@@ -81,7 +93,7 @@ const AccountPage = () => {
   const menuItems = [
     { icon: 'fa-rectangle-list', label: 'إعلاناتي', action: () => {} },
     { icon: 'fa-heart', label: 'المفضلة', action: () => navigate('/favorites') },
-    { icon: 'fa-gear', label: 'الإعدادات', action: () => {} },
+    { icon: 'fa-gear', label: 'الإعدادات', action: () => navigate('/profile') },
     { icon: 'fa-right-from-bracket', label: 'تسجيل الخروج', action: handleLogout, isLogout: true },
   ];
 
@@ -96,44 +108,62 @@ const AccountPage = () => {
         {/* Profile Header */}
         <div className="rounded-3xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-5 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0"
+              aria-label="إضافة صورة"
+            >
               {user?.image ? (
                 <img src={user.image} alt="profile" className="w-full h-full object-cover" />
               ) : (
                 <i className="fas fa-user text-white text-2xl"></i>
               )}
-            </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
 
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold text-white truncate">
                 {user?.full_name || '...'}
               </h1>
-              <p className="text-sm text-white/90 truncate">
-                {user?.email || '...'}
-              </p>
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                className="text-xs font-bold text-white/90 mt-1"
+              >
+                إضافة صورة
+              </button>
             </div>
 
             <button
               onClick={() => navigate('/profile')}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
-              تعديل الملف
+              تعديل
             </button>
           </div>
+        </div>
 
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setNewImage(e.target.files[0])}
-              className="flex-1 text-xs text-white file:ml-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[#4F46E5]"
-            />
+        {/* Personal Info */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-[#1E293B]">المعلومات الشخصية</h3>
             <button
-              onClick={handleImageUpload}
-              className="px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
+              onClick={() => navigate('/profile')}
+              className="text-xs font-bold text-[#4F46E5]"
             >
-              رفع الصورة
+              تعديل
             </button>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-xs text-slate-500 mb-1">الاسم</p>
+            <p className="text-sm font-bold text-[#1E293B]">{user?.full_name || '...'}</p>
           </div>
         </div>
 

@@ -44,10 +44,13 @@ const LoginPage = () => {
 
     } catch (err) {
       console.error(err);
-      const message =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        'فشل تسجيل الدخول';
+      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
+      const errorMap = {
+        'User not found': 'المستخدم غير موجود',
+        'Wrong password': 'كلمة المرور غير صحيحة',
+        'Invalid token': 'بيانات الجلسة غير صالحة',
+      };
+      const message = errorMap[rawMessage] || rawMessage || 'فشل تسجيل الدخول';
       setError(message);
     }
 
