@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const LoginPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const API_BASE_URL = 'https://souq-alraqqa.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,29 +21,34 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const res = await fetch('https://souq-alraqqa.onrender.com/api/auth/login', {
-        method: 'POST',
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+      }, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail || 'فشل تسجيل الدخول');
-      }
+      const data = response.data;
 
       // ✅ حفظ التوكن
-      localStorage.setItem('token', data.access_token);
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      } else if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
 
       // ✅ الانتقال للصفحة الرئيسية
       navigate('/');
 
     } catch (err) {
       console.error(err);
-      setError(err.message);
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        'فشل تسجيل الدخول';
+      setError(message);
     }
 
     setLoading(false);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const API_BASE_URL = 'https://souq-alraqqa.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,28 +36,24 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('https://souq-alraqqa.onrender.com/api/auth/register', {
-        method: 'POST',
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
+        name: formData.fullName,
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      }, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail || 'فشل إنشاء الحساب');
-      }
+      const data = response.data;
 
       // ✅ إذا الباك يرجع توكن مباشرة
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
+      } else if (data.token) {
+        localStorage.setItem('token', data.token);
       }
 
       // ✅ انتقال بعد النجاح
@@ -63,7 +61,11 @@ const RegisterPage = () => {
 
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message);
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        'فشل إنشاء الحساب';
+      setErrorMsg(message);
     }
 
     setLoading(false);
