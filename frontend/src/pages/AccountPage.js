@@ -64,7 +64,7 @@ const AccountPage = () => {
         navigate('/login');
       });
 
-  }, []);
+  }, [navigate]);
 
   // ✅ تسجيل الخروج
   const handleLogout = () => {
