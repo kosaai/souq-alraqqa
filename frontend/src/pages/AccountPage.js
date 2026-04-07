@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,53 +6,6 @@ const AccountPage = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-  const fileInputRef = useRef(null);
-
-  // ✅ NEW: حالة الصورة
-  const [newImage, setNewImage] = useState(null);
-
-  // ✅ جلب التوكن مرة وحدة
-  const token = localStorage.getItem('token');
-
-  // ✅ NEW: دالة رفع الصورة
-  const handleImageUpload = async (selectedImage = newImage) => {
-    if (!selectedImage) return;
-
-    const formData = new FormData();
-    formData.append('file', selectedImage);
-
-    try {
-      const res = await fetch('https://souq-alraqqa.onrender.com/api/user/upload-image', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      // تحديث المستخدم مباشرة
-      setUser({ ...user, image: data.image_url });
-
-      alert('تم تحديث الصورة');
-    } catch (err) {
-      console.error(err);
-      alert('خطأ في رفع الصورة');
-    }
-  };
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setNewImage(file);
-    await handleImageUpload(file);
-  };
-
   // ✅ حماية الصفحة + جلب البيانات
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -92,8 +45,6 @@ const AccountPage = () => {
 
   const menuItems = [
     { icon: 'fa-rectangle-list', label: 'إعلاناتي', action: () => {} },
-    { icon: 'fa-heart', label: 'المفضلة', action: () => navigate('/favorites') },
-    { icon: 'fa-gear', label: 'الإعدادات', action: () => navigate('/profile') },
     { icon: 'fa-right-from-bracket', label: 'تسجيل الخروج', action: handleLogout, isLogout: true },
   ];
 
@@ -107,45 +58,26 @@ const AccountPage = () => {
       <div className="px-4 pt-6 space-y-6">
         {/* Profile Header */}
         <div className="rounded-3xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-5 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0"
-              aria-label="إضافة صورة"
-            >
+          <div className="flex flex-row-reverse items-center justify-between gap-3">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0">
               {user?.image ? (
                 <img src={user.image} alt="profile" className="w-full h-full object-cover" />
               ) : (
                 <i className="fas fa-user text-white text-2xl"></i>
               )}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
+            </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-right">
               <h1 className="text-lg font-bold text-white truncate">
                 {user?.full_name || '...'}
               </h1>
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="text-xs font-bold text-white/90 mt-1"
-              >
-                إضافة صورة
-              </button>
             </div>
 
             <button
               onClick={() => navigate('/profile')}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
-              تعديل
+              تعديل المعلومات
             </button>
           </div>
         </div>
