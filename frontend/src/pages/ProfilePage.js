@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import axios from 'axios';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const API_BASE_URL = 'https://souq-alraqqa.onrender.com';
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [profileData, setProfileData] = useState({
-    name: 'مستخدم تجريبي',
+    full_name: '',
     email: 'user@example.com',
     phone: '+963991234567',
     avatar: null,
@@ -23,6 +26,37 @@ const ProfilePage = () => {
   });
 
   const [tempAvatar, setTempAvatar] = useState(null);
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    axios
+      .get(`${API_BASE_URL}/api/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        const data = res.data || {};
+        setProfileData((prev) => ({
+          ...prev,
+          full_name: data.full_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          avatar: data.image || null,
+        }));
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        navigate('/login');
+      });
+  }, [navigate]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -41,20 +75,81 @@ const ProfilePage = () => {
     setTempAvatar(null);
   };
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
-    // Save to localStorage or context
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
+  const handleSaveProfile = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    setErrorMsg('');
+    setFeedbackMsg('');
+
+    try {
+      await axios.put(
+        `${API_BASE_URL}/api/user/update`,
+        {
+          full_name: profileData.full_name,
+          email: profileData.email,
+          phone: profileData.phone,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      setIsEditing(false);
+      setFeedbackMsg('تم تحديث المعلومات بنجاح');
+    } catch (err) {
+      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
+      const errorMap = {
+        'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
+        'Wrong password': 'كلمة المرور غير صحيحة',
+      };
+      setErrorMsg(errorMap[rawMessage] || rawMessage || 'تعذر تحديث المعلومات');
+    }
   };
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert('كلمة المرور غير متطابقة');
       return;
     }
-    // Save password logic here
-    setShowPasswordSection(false);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    setErrorMsg('');
+    setFeedbackMsg('');
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/auth/change-password`,
+        {
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      setShowPasswordSection(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setFeedbackMsg('تم تحديث المعلومات بنجاح');
+    } catch (err) {
+      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
+      const errorMap = {
+        'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
+        'Wrong password': 'كلمة المرور غير صحيحة',
+      };
+      setErrorMsg(errorMap[rawMessage] || rawMessage || 'تعذر تحديث كلمة المرور');
+    }
   };
 
   return (
@@ -80,6 +175,17 @@ const ProfilePage = () => {
       </div>
 
       <div className="px-4 pt-6">
+        {feedbackMsg && (
+          <div className="mb-4 rounded-xl bg-green-50 text-green-700 px-4 py-3 text-sm font-bold">
+            {feedbackMsg}
+          </div>
+        )}
+        {errorMsg && (
+          <div className="mb-4 rounded-xl bg-red-50 text-red-600 px-4 py-3 text-sm font-bold">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Profile Image Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
           <h3 className="text-lg font-bold text-[#1E293B] mb-4">الصورة الشخصية</h3>
@@ -154,8 +260,8 @@ const ProfilePage = () => {
               </label>
               <input
                 type="text"
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                value={profileData.full_name}
+                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                 disabled={!isEditing}
                 className={`w-full px-4 py-3 rounded-xl border transition-all ${
                   isEditing
