@@ -58,44 +58,28 @@ const AccountPage = () => {
       <div className="px-4 pt-6 space-y-6">
         {/* Profile Header */}
         <div className="rounded-3xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-5 shadow-sm">
-          <div className="flex flex-row-reverse items-center justify-between gap-3">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0">
-              {user?.image ? (
-                <img src={user.image} alt="profile" className="w-full h-full object-cover" />
-              ) : (
-                <i className="fas fa-user text-white text-2xl"></i>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0 text-right">
-              <h1 className="text-lg font-bold text-white truncate">
-                {user?.full_name || '...'}
-              </h1>
-            </div>
-
+          <div className="flex items-center justify-between gap-3">
             <button
               onClick={() => navigate('/profile')}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
               تعديل المعلومات
             </button>
-          </div>
-        </div>
 
-        {/* Personal Info */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[#1E293B]">المعلومات الشخصية</h3>
-            <button
-              onClick={() => navigate('/profile')}
-              className="text-xs font-bold text-[#4F46E5]"
-            >
-              تعديل
-            </button>
-          </div>
-          <div className="rounded-xl bg-slate-50 px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">الاسم</p>
-            <p className="text-sm font-bold text-[#1E293B]">{user?.full_name || '...'}</p>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="min-w-0 text-right">
+                <h1 className="text-lg font-bold text-white truncate">
+                  {user?.full_name || '...'}
+                </h1>
+              </div>
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0">
+                {user?.image ? (
+                  <img src={user.image} alt="profile" className="w-full h-full object-cover" />
+                ) : (
+                  <i className="fas fa-user text-white text-2xl"></i>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
