@@ -10,8 +10,10 @@ const ProfilePage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [profileData, setProfileData] = useState({
+    name: 'مستخدم تجريبي',
     email: 'user@example.com',
     phone: '+963991234567',
+    avatar: null,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -19,6 +21,25 @@ const ProfilePage = () => {
     newPassword: '',
     confirmPassword: '',
   });
+
+  const [tempAvatar, setTempAvatar] = useState(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempAvatar(reader.result);
+        setProfileData({ ...profileData, avatar: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setProfileData({ ...profileData, avatar: null });
+    setTempAvatar(null);
+  };
 
   const handleSaveProfile = () => {
     setIsEditing(false);
@@ -53,16 +74,58 @@ const ProfilePage = () => {
           <i className="fas fa-arrow-right text-[#1E293B]"></i>
         </button>
         <h1 className="text-xl font-bold text-[#1E293B] font-heading tracking-tight">
-          الإعدادات
+          الملف الشخصي
         </h1>
         <div className="w-10"></div>
       </div>
 
       <div className="px-4 pt-6">
-        {/* Settings Info Section */}
+        {/* Profile Image Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+          <h3 className="text-lg font-bold text-[#1E293B] mb-4">الصورة الشخصية</h3>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              {profileData.avatar || tempAvatar ? (
+                <img
+                  src={profileData.avatar || tempAvatar}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-2xl">
+                  <i className="fas fa-user"></i>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <label className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white text-sm font-bold cursor-pointer hover:shadow-md transition-all">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  data-testid="upload-image-input"
+                />
+                <i className="fas fa-upload ms-1"></i>
+                {profileData.avatar ? 'تغيير' : 'رفع صورة'}
+              </label>
+              {profileData.avatar && (
+                <button
+                  onClick={handleDeleteImage}
+                  className="px-4 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-all"
+                  data-testid="delete-image-btn"
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Info Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-[#1E293B]">بيانات الحساب</h3>
+            <h3 className="text-lg font-bold text-[#1E293B]">المعلومات الشخصية</h3>
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -83,11 +146,31 @@ const ProfilePage = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-bold text-[#1E293B] mb-2">
+                <i className="fas fa-user ms-1"></i>
+                الاسم
+              </label>
+              <input
+                type="text"
+                value={profileData.name}
+                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                disabled={!isEditing}
+                className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                  isEditing
+                    ? 'bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]'
+                    : 'bg-slate-100 border-slate-100 text-slate-600'
+                }`}
+                data-testid="name-input"
+              />
+            </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-bold text-[#1E293B] mb-2">
                 <i className="fas fa-envelope ms-1"></i>
-                تغيير البريد الإلكتروني
+                البريد الإلكتروني
               </label>
               <input
                 type="email"
@@ -107,7 +190,7 @@ const ProfilePage = () => {
             <div>
               <label className="block text-sm font-bold text-[#1E293B] mb-2">
                 <i className="fas fa-phone ms-1"></i>
-                تغيير رقم الهاتف
+                رقم الهاتف
               </label>
               <input
                 type="tel"
@@ -128,7 +211,7 @@ const ProfilePage = () => {
         {/* Password Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-[#1E293B]">تغيير كلمة المرور</h3>
+            <h3 className="text-lg font-bold text-[#1E293B]">كلمة المرور</h3>
             {!showPasswordSection ? (
               <button
                 onClick={() => setShowPasswordSection(true)}
