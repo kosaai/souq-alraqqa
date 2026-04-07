@@ -31,6 +31,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('[profile] token before /api/me:', token);
     if (!token) {
       navigate('/login');
       return;
@@ -44,6 +45,7 @@ const ProfilePage = () => {
       })
       .then((res) => {
         const data = res.data || {};
+        console.log('[profile] /api/me response:', res.status, data);
         setProfileData((prev) => ({
           ...prev,
           full_name: data.full_name || '',
@@ -52,9 +54,15 @@ const ProfilePage = () => {
           avatar: data.image || null,
         }));
       })
-      .catch(() => {
-        localStorage.removeItem('token');
-        navigate('/login');
+      .catch((err) => {
+        const status = err?.response?.status;
+        console.error('[profile] /api/me error:', status, err?.response?.data || err.message);
+        if (status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        setErrorMsg('تعذر تحميل بيانات الحساب');
       });
   }, [navigate]);
 
@@ -86,6 +94,7 @@ const ProfilePage = () => {
     setFeedbackMsg('');
 
     try {
+      console.log('[profile] token before /api/user/update:', token);
       await axios.put(
         `${API_BASE_URL}/api/user/update`,
         {
@@ -102,6 +111,7 @@ const ProfilePage = () => {
       setIsEditing(false);
       setFeedbackMsg('تم تحديث المعلومات بنجاح');
     } catch (err) {
+      console.error('[profile] /api/user/update error:', err?.response?.status, err?.response?.data || err.message);
       const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
       const errorMap = {
         'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
@@ -127,6 +137,7 @@ const ProfilePage = () => {
     setFeedbackMsg('');
 
     try {
+      console.log('[profile] token before /api/auth/change-password:', token);
       await axios.post(
         `${API_BASE_URL}/api/auth/change-password`,
         {
@@ -143,6 +154,7 @@ const ProfilePage = () => {
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setFeedbackMsg('تم تحديث المعلومات بنجاح');
     } catch (err) {
+      console.error('[profile] /api/auth/change-password error:', err?.response?.status, err?.response?.data || err.message);
       const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
       const errorMap = {
         'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',

@@ -9,6 +9,7 @@ const AccountPage = () => {
   // ✅ حماية الصفحة + جلب البيانات
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('[account] token before /api/me:', token);
 
     if (!token) {
       navigate('/login');
@@ -20,13 +21,22 @@ const AccountPage = () => {
         Authorization: `Bearer ${token}`,
       },
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        const data = await res.json();
+        console.log('[account] /api/me response:', res.status, data);
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return null;
+        }
+        return data;
+      })
       .then(data => {
+        if (!data) return;
         setUser(data);
       })
-      .catch(() => {
-        localStorage.removeItem('token');
-        navigate('/login');
+      .catch((err) => {
+        console.error('[account] /api/me error:', err);
       });
 
   }, [navigate]);

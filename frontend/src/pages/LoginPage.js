@@ -35,8 +35,10 @@ const LoginPage = () => {
       // ✅ حفظ التوكن
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
+        console.log('[auth] token saved from access_token:', data.access_token);
       } else if (data.token) {
         localStorage.setItem('token', data.token);
+        console.log('[auth] token saved from token:', data.token);
       }
 
       // ✅ الانتقال للصفحة الرئيسية
