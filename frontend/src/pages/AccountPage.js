@@ -16,7 +16,13 @@ const AccountPage = () => {
       return;
     }
 
-    fetch('https://souq-alraqqa.onrender.com/api/me', {
+    const meUrl = 'https://souq-alraqqa.onrender.com/api/me';
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+    console.log('[account] /api/me request:', { url: meUrl, headers, token });
+
+    fetch(meUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

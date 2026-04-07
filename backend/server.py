@@ -159,6 +159,18 @@ async def login(user: UserLogin):
     token = create_token(db_user["id"])
 
     return {"access_token": token}
+
+
+@api_router.get("/me")
+async def get_me(user_id: str = Depends(get_current_user)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+
 # 🔥 Dashboard API
 @api_router.get("/dashboard")
 async def dashboard():

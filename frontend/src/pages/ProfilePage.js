@@ -36,9 +36,14 @@ const ProfilePage = () => {
       navigate('/login');
       return;
     }
+    const meUrl = `${API_BASE_URL}/api/me`;
+    const meHeaders = {
+      Authorization: `Bearer ${token}`,
+    };
+    console.log('[profile] /api/me request:', { url: meUrl, headers: meHeaders, token });
 
     axios
-      .get(`${API_BASE_URL}/api/me`, {
+      .get(meUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
