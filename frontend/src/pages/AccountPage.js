@@ -58,20 +58,7 @@ const AccountPage = () => {
       <div className="px-4 pt-6 space-y-6">
         {/* Profile Header */}
         <div className="rounded-3xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={() => navigate('/profile')}
-              className="w-32 shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
-            >
-              تعديل المعلومات
-            </button>
-
-            <div className="flex-1 min-w-0 text-center">
-              <h1 className="text-lg font-bold text-white truncate">
-                {user?.full_name || '...'}
-              </h1>
-            </div>
-
+          <div dir="rtl" className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0">
                 {user?.image ? (
@@ -81,6 +68,19 @@ const AccountPage = () => {
                 )}
               </div>
             </div>
+
+            <div className="flex-1 min-w-0 text-center">
+              <h1 className="text-lg font-bold text-white truncate">
+                {user?.full_name || '...'}
+              </h1>
+            </div>
+
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-32 shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
+            >
+              تعديل المعلومات
+            </button>
           </div>
         </div>
 
