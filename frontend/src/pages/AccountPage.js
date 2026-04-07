@@ -61,17 +61,18 @@ const AccountPage = () => {
           <div className="flex items-center justify-between gap-3">
             <button
               onClick={() => navigate('/profile')}
-              className="shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
+              className="w-32 shrink-0 px-3 py-2 rounded-xl bg-white text-[#4F46E5] text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
               تعديل المعلومات
             </button>
 
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="min-w-0 text-right">
-                <h1 className="text-lg font-bold text-white truncate">
-                  {user?.full_name || '...'}
-                </h1>
-              </div>
+            <div className="flex-1 min-w-0 text-center">
+              <h1 className="text-lg font-bold text-white truncate">
+                {user?.full_name || '...'}
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-3">
               <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border border-white/40 flex items-center justify-center shrink-0">
                 {user?.image ? (
                   <img src={user.image} alt="profile" className="w-full h-full object-cover" />
