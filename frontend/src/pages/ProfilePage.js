@@ -1,171 +1,191 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import axios from 'axios';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const API_BASE_URL = 'https://souq-alraqqa.onrender.com';
+  const fileInputRef = useRef(null);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const [profileData, setProfileData] = useState({
-    full_name: '',
-    email: 'user@example.com',
-    phone: '+963991234567',
-    avatar: null,
-  });
-
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
-  const [tempAvatar, setTempAvatar] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
+  const [profileData, setProfileData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    avatar: null,
+  });
+
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    password: '',
+  });
+
+  const mapBackendError = (rawMessage, fallback) => {
+    const errorMap = {
+      'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
+      'Wrong password': 'كلمة المرور غير صحيحة',
+      'User not found': 'المستخدم غير موجود',
+    };
+
+    return errorMap[rawMessage] || rawMessage || fallback;
+  };
+
+  const getTokenOrRedirect = () => {
     const token = localStorage.getItem('token');
-    console.log('[profile] token before /api/me:', token);
     if (!token) {
       navigate('/login');
-      return;
+      return null;
     }
+    return token;
+  };
+
+  const loadMe = async () => {
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
     const meUrl = `${API_BASE_URL}/api/me`;
-    const meHeaders = {
-      Authorization: `Bearer ${token}`,
-    };
+    const meHeaders = { Authorization: `Bearer ${token}` };
     console.log('[profile] /api/me request:', { url: meUrl, headers: meHeaders, token });
 
-    axios
-      .get(meUrl, {
+    try {
+      const res = await axios.get(meUrl, { headers: meHeaders });
+      console.log('[profile] /api/me response:', res.status, res.data);
+      const user = res.data || {};
+
+      const nextData = {
+        full_name: user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        avatar: user.avatar || user.image || null,
+      };
+
+      setProfileData(nextData);
+      setFormData((prev) => ({ ...prev, ...nextData, password: '' }));
+    } catch (err) {
+      const status = err?.response?.status;
+      const raw = err?.response?.data?.detail || err?.response?.data?.message || err.message;
+      console.error('[profile] /api/me error:', status, err?.response?.data || err.message);
+
+      if (status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+
+      setErrorMsg(mapBackendError(raw, 'تعذر تحميل بيانات الحساب'));
+    }
+  };
+
+  useEffect(() => {
+    loadMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
+    setErrorMsg('');
+    setFeedbackMsg('');
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/user/upload-image`, form, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
-      .then((res) => {
-        const data = res.data || {};
-        console.log('[profile] /api/me response:', res.status, data);
-        setProfileData((prev) => ({
-          ...prev,
-          full_name: data.full_name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          avatar: data.image || null,
-        }));
-      })
-      .catch((err) => {
-        const status = err?.response?.status;
-        console.error('[profile] /api/me error:', status, err?.response?.data || err.message);
-        if (status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-          return;
-        }
-        setErrorMsg('تعذر تحميل بيانات الحساب');
       });
-  }, [navigate]);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempAvatar(reader.result);
-        setProfileData({ ...profileData, avatar: reader.result });
-      };
-      reader.readAsDataURL(file);
+      const avatarUrl = res?.data?.avatar || res?.data?.image_url || null;
+      setProfileData((prev) => ({ ...prev, avatar: avatarUrl }));
+      setFormData((prev) => ({ ...prev, avatar: avatarUrl }));
+      setFeedbackMsg('تم تحديث الصورة بنجاح');
+    } catch (err) {
+      const status = err?.response?.status;
+      const raw = err?.response?.data?.detail || err?.response?.data?.message || err.message;
+      console.error('[profile] /api/user/upload-image error:', status, err?.response?.data || err.message);
+
+      if (status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+
+      setErrorMsg(mapBackendError(raw, 'تعذر تحديث الصورة'));
+    } finally {
+      e.target.value = '';
     }
   };
 
-  const handleDeleteImage = () => {
-    setProfileData({ ...profileData, avatar: null });
-    setTempAvatar(null);
-  };
+  const handleSubmitProfile = async (e) => {
+    e.preventDefault();
 
-  const handleSaveProfile = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+    const token = getTokenOrRedirect();
+    if (!token) return;
 
+    setLoading(true);
     setErrorMsg('');
     setFeedbackMsg('');
 
     try {
-      console.log('[profile] token before /api/user/update:', token);
-      await axios.put(
-        `${API_BASE_URL}/api/user/update`,
-        {
-          full_name: profileData.full_name,
-          email: profileData.email,
-          phone: profileData.phone,
+      const payload = {
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
+      if (formData.password?.trim()) {
+        payload.password = formData.password;
+      }
+
+      const res = await axios.put(`${API_BASE_URL}/api/user/update`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      });
+
+      const updated = res.data || {};
+      const merged = {
+        full_name: updated.full_name || payload.full_name,
+        email: updated.email || payload.email,
+        phone: updated.phone || payload.phone,
+        avatar: profileData.avatar,
+      };
+
+      setProfileData(merged);
+      setFormData((prev) => ({ ...merged, password: '' }));
       setIsEditing(false);
       setFeedbackMsg('تم تحديث المعلومات بنجاح');
     } catch (err) {
-      console.error('[profile] /api/user/update error:', err?.response?.status, err?.response?.data || err.message);
-      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
-      const errorMap = {
-        'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
-        'Wrong password': 'كلمة المرور غير صحيحة',
-      };
-      setErrorMsg(errorMap[rawMessage] || rawMessage || 'تعذر تحديث المعلومات');
-    }
-  };
+      const status = err?.response?.status;
+      const raw = err?.response?.data?.detail || err?.response?.data?.message || err.message;
+      console.error('[profile] /api/user/update error:', status, err?.response?.data || err.message);
 
-  const handleSavePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('كلمة المرور غير متطابقة');
-      return;
-    }
+      if (status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    setErrorMsg('');
-    setFeedbackMsg('');
-
-    try {
-      console.log('[profile] token before /api/auth/change-password:', token);
-      await axios.post(
-        `${API_BASE_URL}/api/auth/change-password`,
-        {
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      setShowPasswordSection(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setFeedbackMsg('تم تحديث المعلومات بنجاح');
-    } catch (err) {
-      console.error('[profile] /api/auth/change-password error:', err?.response?.status, err?.response?.data || err.message);
-      const rawMessage = err?.response?.data?.detail || err?.response?.data?.message || '';
-      const errorMap = {
-        'Email already exists': 'البريد الإلكتروني مستخدم مسبقاً',
-        'Wrong password': 'كلمة المرور غير صحيحة',
-      };
-      setErrorMsg(errorMap[rawMessage] || rawMessage || 'تعذر تحديث كلمة المرور');
+      setErrorMsg(mapBackendError(raw, 'تعذر تحديث المعلومات'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -191,261 +211,107 @@ const ProfilePage = () => {
         <div className="w-10"></div>
       </div>
 
-      <div className="px-4 pt-6">
+      <div className="px-4 pt-6 space-y-4">
         {feedbackMsg && (
-          <div className="mb-4 rounded-xl bg-green-50 text-green-700 px-4 py-3 text-sm font-bold">
+          <div className="rounded-xl bg-green-50 text-green-700 px-4 py-3 text-sm font-bold">
             {feedbackMsg}
           </div>
         )}
         {errorMsg && (
-          <div className="mb-4 rounded-xl bg-red-50 text-red-600 px-4 py-3 text-sm font-bold">
+          <div className="rounded-xl bg-red-50 text-red-600 px-4 py-3 text-sm font-bold">
             {errorMsg}
           </div>
         )}
 
-        {/* Profile Image Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
-          <h3 className="text-lg font-bold text-[#1E293B] mb-4">الصورة الشخصية</h3>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              {profileData.avatar || tempAvatar ? (
-                <img
-                  src={profileData.avatar || tempAvatar}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-2xl">
-                  <i className="fas fa-user"></i>
-                </div>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <label className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white text-sm font-bold cursor-pointer hover:shadow-md transition-all">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  data-testid="upload-image-input"
-                />
-                <i className="fas fa-upload ms-1"></i>
-                {profileData.avatar ? 'تغيير' : 'رفع صورة'}
-              </label>
-              {profileData.avatar && (
-                <button
-                  onClick={handleDeleteImage}
-                  className="px-4 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-all"
-                  data-testid="delete-image-btn"
-                >
-                  <i className="fas fa-trash"></i>
-                </button>
-              )}
-            </div>
-          </div>
+        {/* Modern Profile Header */}
+        <div className="bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] rounded-3xl p-6 shadow-sm text-center">
+          <button
+            type="button"
+            onClick={handleAvatarClick}
+            className="mx-auto w-24 h-24 rounded-full overflow-hidden border-2 border-white/40 shadow-md bg-white/20 flex items-center justify-center"
+          >
+            {profileData.avatar ? (
+              <img src={profileData.avatar} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              <i className="fas fa-user text-white text-3xl"></i>
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+
+          <h2 className="mt-4 text-xl font-bold text-white">
+            {profileData.full_name || '...'}
+          </h2>
+          <p className="text-sm text-white/85 mt-1">{profileData.email || '...'}</p>
+
+          <button
+            onClick={() => setIsEditing((prev) => !prev)}
+            className="mt-4 px-5 py-2 rounded-full bg-white text-[#4F46E5] text-sm font-bold shadow-sm"
+          >
+            {isEditing ? 'إلغاء التعديل' : 'تعديل المعلومات'}
+          </button>
         </div>
 
-        {/* Profile Info Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-[#1E293B]">المعلومات الشخصية</h3>
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-sm text-[#4F46E5] font-bold"
-                data-testid="edit-profile-btn"
-              >
-                تعديل
-              </button>
-            ) : (
-              <button
-                onClick={handleSaveProfile}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white text-sm font-bold"
-                data-testid="save-profile-btn"
-              >
-                حفظ
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {/* Name */}
+        {/* Edit Form */}
+        {isEditing && (
+          <form onSubmit={handleSubmitProfile} className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
             <div>
-              <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                <i className="fas fa-user ms-1"></i>
-                الاسم
-              </label>
+              <label className="block text-sm font-bold text-[#1E293B] mb-2">الاسم</label>
               <input
                 type="text"
-                value={profileData.full_name}
-                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                disabled={!isEditing}
-                className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                  isEditing
-                    ? 'bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]'
-                    : 'bg-slate-100 border-slate-100 text-slate-600'
-                }`}
-                data-testid="name-input"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]"
+                required
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                <i className="fas fa-envelope ms-1"></i>
-                البريد الإلكتروني
-              </label>
+              <label className="block text-sm font-bold text-[#1E293B] mb-2">البريد الإلكتروني</label>
               <input
                 type="email"
-                value={profileData.email}
-                onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                disabled={!isEditing}
-                className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                  isEditing
-                    ? 'bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]'
-                    : 'bg-slate-100 border-slate-100 text-slate-600'
-                }`}
-                data-testid="email-input"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]"
+                required
               />
             </div>
 
-            {/* Phone */}
             <div>
-              <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                <i className="fas fa-phone ms-1"></i>
-                رقم الهاتف
-              </label>
+              <label className="block text-sm font-bold text-[#1E293B] mb-2">رقم الهاتف</label>
               <input
                 type="tel"
-                value={profileData.phone}
-                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                disabled={!isEditing}
-                className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                  isEditing
-                    ? 'bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]'
-                    : 'bg-slate-100 border-slate-100 text-slate-600'
-                }`}
-                data-testid="phone-input"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]"
               />
             </div>
-          </div>
-        </div>
 
-        {/* Password Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-[#1E293B]">كلمة المرور</h3>
-            {!showPasswordSection ? (
-              <button
-                onClick={() => setShowPasswordSection(true)}
-                className="text-sm text-[#4F46E5] font-bold"
-                data-testid="change-password-btn"
-              >
-                تغيير
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setShowPasswordSection(false);
-                  setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                }}
-                className="text-sm text-slate-500 font-bold"
-              >
-                إلغاء
-              </button>
-            )}
-          </div>
-
-          {showPasswordSection && (
-            <div className="space-y-4">
-              {/* Current Password */}
-              <div>
-                <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                  كلمة المرور الحالية
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={passwordData.currentPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-all"
-                    data-testid="current-password-input"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  >
-                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                  </button>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <div>
-                <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                  كلمة المرور الجديدة
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, newPassword: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-all"
-                  data-testid="new-password-input"
-                />
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-sm font-bold text-[#1E293B] mb-2">
-                  تأكيد كلمة المرور
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={passwordData.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, confirmPassword: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-all"
-                    data-testid="confirm-password-input"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  >
-                    <i
-                      className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}
-                    ></i>
-                  </button>
-                </div>
-              </div>
-
-              <button
-                onClick={handleSavePassword}
-                className="w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3 shadow-md hover:shadow-lg transition-all"
-                data-testid="save-password-btn"
-              >
-                حفظ كلمة المرور
-              </button>
+            <div>
+              <label className="block text-sm font-bold text-[#1E293B] mb-2">كلمة المرور (اختياري)</label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8]"
+                placeholder="اتركها فارغة إذا لا تريد التغيير"
+              />
             </div>
-          )}
-        </div>
 
-        {/* Logout Button */}
-        <button
-          onClick={() => navigate('/login')}
-          className="w-full rounded-xl bg-red-50 text-red-600 font-bold py-3 hover:bg-red-100 transition-all flex items-center justify-center gap-2"
-          data-testid="logout-btn"
-        >
-          <i className="fas fa-right-from-bracket"></i>
-          <span>تسجيل الخروج</span>
-        </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white font-bold py-3 shadow-sm"
+            >
+              {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+            </button>
+          </form>
+        )}
       </div>
     </motion.div>
   );
