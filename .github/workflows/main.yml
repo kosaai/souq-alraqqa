@@ -1,0 +1,67 @@
+name: macOS iPhone Full Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  iphone-test:
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout real project
+        uses: actions/checkout@v4
+
+      - name: Check Mac and Xcode
+        run: |
+          echo "===== macOS ====="
+          sw_vers
+          echo "===== CPU ====="
+          uname -m
+          echo "===== Xcode ====="
+          xcodebuild -version
+          echo "===== Developer Path ====="
+          xcode-select -p
+
+      - name: Connect Mac to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          version: latest
+
+      - name: Check Tailscale
+        run: |
+          echo "===== Tailscale ====="
+          tailscale status
+          echo "===== Mac Tailscale IP ====="
+          tailscale ip -4
+
+      - name: Test iPhone over Tailscale
+        run: |
+          echo "===== iPhone Tailscale Test ====="
+          tailscale ping --timeout=10s 100.100.55.103 || true
+
+      - name: Install iPhone tools
+        run: |
+          python3 -m pip install --user --upgrade pymobiledevice3
+          echo "$HOME/Library/Python/3.9/bin" >> "$GITHUB_PATH"
+
+      - name: Check Apple CoreDevice
+        run: |
+          echo "===== CoreDevice devices ====="
+          xcrun devicectl list devices || true
+
+      - name: Check iPhone discovery
+        run: |
+          echo "===== pymobiledevice3 ====="
+          python3 -m pymobiledevice3 usbmux list || true
+          echo "===== Remote devices ====="
+          python3 -m pymobiledevice3 remote browse || true
+
+      - name: Final diagnostics
+        run: |
+          echo "===== FINAL TAILSCALE STATUS ====="
+          tailscale status
+          echo "===== FINAL XCODE DEVICE LIST ====="
+          xcrun devicectl list devices || true
+          echo "===== DONE ====="
