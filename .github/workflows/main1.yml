@@ -1,0 +1,158 @@
+name: iPhone iOS 27 Full Connection Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  iphone-test:
+    runs-on: xcode-27
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Check Mac and Xcode 27
+        run: |
+          echo "===================================="
+          echo "MAC"
+          echo "===================================="
+          sw_vers
+          uname -m
+
+          echo "===================================="
+          echo "XCODE"
+          echo "===================================="
+          xcodebuild -version
+          xcode-select -p
+
+          echo "===================================="
+          echo "IOS SDK"
+          echo "===================================="
+          xcrun --sdk iphoneos --show-sdk-version
+
+      # Install BEFORE Tailscale so DNS cannot affect pip.
+      - name: Install iPhone tools
+        run: |
+          echo "===== Checking pipx ====="
+          command -v pipx || brew install pipx
+
+          echo "===== Installing pymobiledevice3 ====="
+          pipx install pymobiledevice3
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+          echo "===== Verify executable ====="
+          "$HOME/.local/bin/pymobiledevice3" -h > /dev/null
+
+          echo "pymobiledevice3 installed successfully"
+
+      - name: Connect Mac to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          version: latest
+
+      - name: Check Tailscale
+        run: |
+          echo "===================================="
+          echo "TAILSCALE STATUS"
+          echo "===================================="
+          tailscale status
+
+          echo "===================================="
+          echo "MAC TAILSCALE IP"
+          echo "===================================="
+          tailscale ip -4
+
+      - name: Test iPhone Tailscale connection
+        run: |
+          echo "===================================="
+          echo "TEST IPHONE 100.100.55.103"
+          echo "===================================="
+
+          tailscale ping --timeout=10s 100.100.55.103 || true
+
+      - name: Run pymobiledevice3 Doctor
+        run: |
+          echo "===================================="
+          echo "PYMOBILEDEVICE3 DOCTOR"
+          echo "===================================="
+
+          pymobiledevice3 doctor || true
+
+      - name: Check Apple CoreDevice
+        run: |
+          echo "===================================="
+          echo "APPLE COREDEVICE / XCODE DEVICES"
+          echo "===================================="
+
+          xcrun devicectl list devices || true
+
+      - name: Check USBMux devices
+        run: |
+          echo "===================================="
+          echo "USBMUX DEVICES"
+          echo "===================================="
+
+          pymobiledevice3 usbmux list || true
+
+      - name: Check Remote iPhone discovery
+        run: |
+          echo "===================================="
+          echo "REMOTE IOS DISCOVERY"
+          echo "===================================="
+
+          pymobiledevice3 remote browse --timeout 10 || true
+
+      - name: Final diagnostics
+        if: always()
+        run: |
+          echo ""
+          echo "===================================="
+          echo "1. MAC / XCODE"
+          echo "===================================="
+          sw_vers || true
+          xcodebuild -version || true
+          xcrun --sdk iphoneos --show-sdk-version || true
+
+          echo ""
+          echo "===================================="
+          echo "2. TAILSCALE"
+          echo "===================================="
+          tailscale status || true
+
+          echo ""
+          echo "===================================="
+          echo "3. IPHONE TAILSCALE PING"
+          echo "===================================="
+          tailscale ping --timeout=10s 100.100.55.103 || true
+
+          echo ""
+          echo "===================================="
+          echo "4. PYMOBILEDEVICE3 DOCTOR"
+          echo "===================================="
+          pymobiledevice3 doctor || true
+
+          echo ""
+          echo "===================================="
+          echo "5. XCODE COREDEVICE"
+          echo "===================================="
+          xcrun devicectl list devices || true
+
+          echo ""
+          echo "===================================="
+          echo "6. USBMUX"
+          echo "===================================="
+          pymobiledevice3 usbmux list || true
+
+          echo ""
+          echo "===================================="
+          echo "7. REMOTE DISCOVERY"
+          echo "===================================="
+          pymobiledevice3 remote browse --timeout 10 || true
+
+          echo ""
+          echo "===================================="
+          echo "FULL TEST FINISHED"
+          echo "===================================="
