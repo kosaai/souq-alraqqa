@@ -1,0 +1,119 @@
+name: macOS iPhone Full Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  iphone-test:
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Check Mac and Xcode
+        run: |
+          echo "===== macOS ====="
+          sw_vers
+          echo "===== CPU ====="
+          uname -m
+          echo "===== Xcode ====="
+          xcodebuild -version
+          echo "===== Developer Path ====="
+          xcode-select -p
+
+      # IMPORTANT:
+      # Install everything that needs Internet BEFORE Tailscale.
+      - name: Install iPhone tools
+        run: |
+          echo "===== Internet/DNS before Tailscale ====="
+          python3 -c "import socket; print(socket.gethostbyname('pypi.org'))"
+
+          echo "===== Installing pipx ====="
+          brew install pipx
+
+          echo "===== Installing pymobiledevice3 ====="
+          PIPX_HOME="$HOME/.local/pipx" \
+          PIPX_BIN_DIR="$HOME/.local/bin" \
+          pipx install pymobiledevice3
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+          echo "===== Verify installation ====="
+          "$HOME/.local/bin/pymobiledevice3" --version
+
+      - name: Connect Mac to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          version: latest
+
+      - name: Check Tailscale
+        run: |
+          echo "===== Tailscale status ====="
+          tailscale status
+
+          echo "===== Mac Tailscale IP ====="
+          tailscale ip -4
+
+      - name: Test iPhone over Tailscale
+        run: |
+          echo "===== iPhone 100.100.55.103 ====="
+          tailscale ping --timeout=10s 100.100.55.103 || true
+
+      - name: Check Apple CoreDevice
+        run: |
+          echo "===== Apple CoreDevice ====="
+          xcrun devicectl list devices || true
+
+      - name: Check iPhone discovery
+        run: |
+          echo "===== USBMux ====="
+          pymobiledevice3 usbmux list || true
+
+          echo "===== Remote discovery ====="
+          pymobiledevice3 remote browse || true
+
+      - name: Final diagnostics
+        if: always()
+        run: |
+          echo "===================================="
+          echo "TAILSCALE DEVICES"
+          echo "===================================="
+          tailscale status || true
+
+          echo ""
+          echo "===================================="
+          echo "MAC TAILSCALE IP"
+          echo "===================================="
+          tailscale ip -4 || true
+
+          echo ""
+          echo "===================================="
+          echo "IPHONE TAILSCALE TEST"
+          echo "===================================="
+          tailscale ping --timeout=10s 100.100.55.103 || true
+
+          echo ""
+          echo "===================================="
+          echo "APPLE COREDEVICE / XCODE"
+          echo "===================================="
+          xcrun devicectl list devices || true
+
+          echo ""
+          echo "===================================="
+          echo "PYMOBILEDEVICE3 USBMUX"
+          echo "===================================="
+          pymobiledevice3 usbmux list || true
+
+          echo ""
+          echo "===================================="
+          echo "PYMOBILEDEVICE3 REMOTE"
+          echo "===================================="
+          pymobiledevice3 remote browse || true
+
+          echo ""
+          echo "===================================="
+          echo "TEST COMPLETE"
+          echo "===================================="
